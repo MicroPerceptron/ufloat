@@ -18,15 +18,19 @@ clear API and predictable bit layouts over exhaustive IEEE 754 compatibility.
 
 ## Formats
 
-| Type   | Layout | Storage | Native compute path                    |
-| ------ | ------ | ------- | -------------------------------------- |
-| `Uf8`  | E4M4   | `u8`    | LUT by default, nightly `f16` optional |
-| `Uf16` | E5M11  | `u16`   | promote to `f32`                       |
-| `Uf32` | E8M24  | `u32`   | promote to `f64`                       |
+| Type   | Concrete layout type | Layout | Storage | Native compute path                    |
+| ------ | -------------------- | ------ | ------- | -------------------------------------- |
+| `Uf8`  | `Uf8E4M4`            | E4M4   | `u8`    | LUT by default, nightly `f16` optional |
+| `Uf16` | `Uf16E5M11`          | E5M11  | `u16`   | promote to `f32`                       |
+| `Uf32` | `Uf32E8M24`          | E8M24  | `u32`   | promote to `f64`                       |
 
 The all-ones exponent is reserved for infinity and NaN, following the usual
 IEEE-style convention. Negative native inputs encode to NaN. Operations whose
 mathematical result is negative also produce NaN.
+
+`Uf8`, `Uf16`, and `Uf32` are ergonomic aliases for the default concrete layout
+types. Layout-specific names are exported so future alternatives like E5M3 or
+E6M10 can be added as new types without changing the meaning of the aliases.
 
 ## Install
 
@@ -77,6 +81,32 @@ implemented as simple unsigned integer comparisons of the underlying bits. NaN
 payloads therefore sort after infinity rather than behaving like IEEE
 `f32::partial_cmp`.
 
+## Conversions
+
+Use the explicit constructors when you want IEEE-like encoding behavior:
+
+```rust
+use unsigned_float::Uf8;
+
+assert!(Uf8::from_f32(-1.0).is_nan());
+assert!(Uf8::from_f32(f32::INFINITY).is_infinite());
+```
+
+Use `TryFrom`/`TryInto` when you want to reject values outside the finite,
+non-negative domain:
+
+```rust
+use unsigned_float::{ConversionError, Uf16};
+
+assert_eq!(Uf16::try_from(42_u32), Ok(Uf16::from_f32(42.0)));
+assert_eq!(Uf16::try_from(-1_i32), Err(ConversionError::Negative));
+assert_eq!(Uf16::try_from(f64::INFINITY), Err(ConversionError::Infinite));
+```
+
+The crate implements fallible conversions from `f64` and primitive integer
+types. With the `f16` feature enabled, `from_f16`, `to_f16`,
+`From<f16>`, and `Into<f16>` are also available.
+
 ## Features
 
 | Feature      | Default | Description                                                                                                 |
@@ -114,8 +144,10 @@ default command measures the generated LUT path.
 Implemented:
 
 - `Uf8`, `Uf16`, and `Uf32` transparent newtypes
+- explicit concrete layout names: `Uf8E4M4`, `Uf16E5M11`, and `Uf32E8M24`
 - raw bit constructors and extractors
 - native float conversions
+- fallible conversions from `f64` and primitive integers
 - `Add`, `Sub`, `Mul`, and `Div`
 - raw-bit `Ord`/`PartialOrd`
 - generated UF8 arithmetic lookup tables

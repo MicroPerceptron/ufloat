@@ -1,21 +1,23 @@
 #![no_std]
-#![cfg_attr(all(feature = "f16", not(feature = "soft-float")), feature(f16))]
+#![cfg_attr(feature = "f16", feature(f16))]
 
 #[cfg(test)]
 extern crate std;
 
+mod convert;
 mod dispatch;
 mod uf16;
 mod uf32;
 mod uf8;
 
-pub use uf8::Uf8;
-pub use uf16::Uf16;
-pub use uf32::Uf32;
+pub use convert::ConversionError;
+pub use uf8::{Uf8, Uf8E4M4};
+pub use uf16::{Uf16, Uf16E5M11};
+pub use uf32::{Uf32, Uf32E8M24};
 
 #[cfg(test)]
 mod tests {
-    use super::{Uf8, Uf16, Uf32};
+    use super::{ConversionError, Uf8, Uf16, Uf32};
 
     #[test]
     fn canonical_one_bits_match_the_layouts() {
@@ -46,6 +48,52 @@ mod tests {
         assert!(Uf8::from_f32(f32::INFINITY).is_infinite());
         assert!(Uf16::from_f32(f32::INFINITY).is_infinite());
         assert!(Uf32::from_f64(f64::INFINITY).is_infinite());
+    }
+
+    #[test]
+    fn try_from_f64_rejects_invalid_or_unrepresentable_values() {
+        assert_eq!(Uf8::try_from(-1.0_f64), Err(ConversionError::Negative));
+        assert_eq!(Uf16::try_from(f64::NAN), Err(ConversionError::Nan));
+        assert_eq!(
+            Uf32::try_from(f64::INFINITY),
+            Err(ConversionError::Infinite)
+        );
+
+        assert_eq!(Uf8::try_from(1.0e20_f64), Err(ConversionError::Overflow));
+        assert_eq!(Uf16::try_from(1.0e20_f64), Err(ConversionError::Overflow));
+        assert_eq!(Uf8::try_from(1.0e-20_f64), Err(ConversionError::Underflow));
+
+        assert_eq!(Uf8::try_from(2.0_f64), Ok(Uf8::from_f32(2.0)));
+        assert_eq!(Uf16::try_from(2.0_f64), Ok(Uf16::from_f32(2.0)));
+        assert_eq!(Uf32::try_from(2.0_f64), Ok(Uf32::from_f64(2.0)));
+    }
+
+    #[test]
+    fn try_from_integer_types() {
+        assert_eq!(Uf8::try_from(2_u8), Ok(Uf8::from_f32(2.0)));
+        assert_eq!(Uf16::try_from(1024_u32), Ok(Uf16::from_f32(1024.0)));
+        assert_eq!(Uf32::try_from(1024_u64), Ok(Uf32::from_f64(1024.0)));
+
+        assert_eq!(Uf8::try_from(-1_i8), Err(ConversionError::Negative));
+        assert_eq!(Uf8::try_from(u128::MAX), Err(ConversionError::Overflow));
+    }
+
+    #[cfg(feature = "f16")]
+    #[test]
+    fn f16_conversions_are_available_when_enabled() {
+        let native = 2.0_f16;
+
+        assert_eq!(Uf8::from_f16(native).to_f16(), native);
+        assert_eq!(Uf16::from_f16(native).to_f16(), native);
+        assert_eq!(Uf32::from_f16(native).to_f16(), native);
+
+        assert_eq!(Uf8::from(native), Uf8::from_f16(native));
+        assert_eq!(Uf16::from(native), Uf16::from_f16(native));
+        assert_eq!(Uf32::from(native), Uf32::from_f16(native));
+
+        let _: f16 = Uf8::from_f16(native).into();
+        let _: f16 = Uf16::from_f16(native).into();
+        let _: f16 = Uf32::from_f16(native).into();
     }
 
     #[test]

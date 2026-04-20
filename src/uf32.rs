@@ -2,13 +2,15 @@ use core::cmp::Ordering;
 use core::fmt;
 use core::ops::{Add, Div, Mul, Sub};
 
-use crate::dispatch;
+use crate::{ConversionError, dispatch};
 
 #[derive(Clone, Copy, Default, Hash, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct Uf32(u32);
+pub struct Uf32E8M24(u32);
 
-impl Uf32 {
+pub type Uf32 = Uf32E8M24;
+
+impl Uf32E8M24 {
     pub const EXPONENT_BITS: u32 = 8;
     pub const MANTISSA_BITS: u32 = 24;
     pub const EXPONENT_BIAS: i32 = 127;
@@ -39,12 +41,31 @@ impl Uf32 {
         dispatch::uf32_to_f64(self.0)
     }
 
+    pub fn try_from_f64(value: f64) -> Result<Self, ConversionError> {
+        crate::convert::check_finite_non_negative(value)?;
+
+        let encoded = Self::from_f64(value);
+        crate::convert::check_encoded(value, encoded.is_zero(), encoded.is_infinite())?;
+
+        Ok(encoded)
+    }
+
     pub fn from_f32(value: f32) -> Self {
         Self::from_f64(value as f64)
     }
 
     pub fn to_f32(self) -> f32 {
         self.to_f64() as f32
+    }
+
+    #[cfg(feature = "f16")]
+    pub fn from_f16(value: f16) -> Self {
+        Self::from_f64(value as f64)
+    }
+
+    #[cfg(feature = "f16")]
+    pub fn to_f16(self) -> f16 {
+        self.to_f64() as f16
     }
 
     pub const fn exponent(self) -> u32 {
@@ -76,43 +97,51 @@ impl Uf32 {
     }
 }
 
-impl From<f32> for Uf32 {
+impl From<f32> for Uf32E8M24 {
     fn from(value: f32) -> Self {
         Self::from_f32(value)
     }
 }
 
-impl From<f64> for Uf32 {
-    fn from(value: f64) -> Self {
-        Self::from_f64(value)
+#[cfg(feature = "f16")]
+impl From<f16> for Uf32E8M24 {
+    fn from(value: f16) -> Self {
+        Self::from_f16(value)
     }
 }
 
-impl From<Uf32> for f32 {
-    fn from(value: Uf32) -> Self {
+#[cfg(feature = "f16")]
+impl From<Uf32E8M24> for f16 {
+    fn from(value: Uf32E8M24) -> Self {
+        value.to_f16()
+    }
+}
+
+impl From<Uf32E8M24> for f32 {
+    fn from(value: Uf32E8M24) -> Self {
         value.to_f32()
     }
 }
 
-impl From<Uf32> for f64 {
-    fn from(value: Uf32) -> Self {
+impl From<Uf32E8M24> for f64 {
+    fn from(value: Uf32E8M24) -> Self {
         value.to_f64()
     }
 }
 
-impl Ord for Uf32 {
+impl Ord for Uf32E8M24 {
     fn cmp(&self, other: &Self) -> Ordering {
         self.0.cmp(&other.0)
     }
 }
 
-impl PartialOrd for Uf32 {
+impl PartialOrd for Uf32E8M24 {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl Add for Uf32 {
+impl Add for Uf32E8M24 {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
@@ -120,7 +149,7 @@ impl Add for Uf32 {
     }
 }
 
-impl Sub for Uf32 {
+impl Sub for Uf32E8M24 {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
@@ -128,7 +157,7 @@ impl Sub for Uf32 {
     }
 }
 
-impl Mul for Uf32 {
+impl Mul for Uf32E8M24 {
     type Output = Self;
 
     fn mul(self, rhs: Self) -> Self::Output {
@@ -136,7 +165,7 @@ impl Mul for Uf32 {
     }
 }
 
-impl Div for Uf32 {
+impl Div for Uf32E8M24 {
     type Output = Self;
 
     fn div(self, rhs: Self) -> Self::Output {
@@ -144,7 +173,7 @@ impl Div for Uf32 {
     }
 }
 
-impl fmt::Debug for Uf32 {
+impl fmt::Debug for Uf32E8M24 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_tuple("Uf32").field(&self.to_f64()).finish()
     }
