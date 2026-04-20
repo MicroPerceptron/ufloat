@@ -12,6 +12,8 @@ fn main() {
 
     write_uf8_layout_tables(&out_dir, "uf8_e4m4", 4, 4, 7);
     write_uf8_layout_tables(&out_dir, "uf8_e5m3", 5, 3, 15);
+    write_uf8_cross_layout_pow_tables(&out_dir, "uf8_e4m4", "uf8_e5m3", (4, 4, 7), (5, 3, 15));
+    write_uf8_cross_layout_pow_tables(&out_dir, "uf8_e5m3", "uf8_e4m4", (5, 3, 15), (4, 4, 7));
 }
 
 fn write_uf8_layout_tables(
@@ -91,6 +93,52 @@ fn write_uf8_table(
     }
 
     fs::write(out_dir.join(file_name), table).expect("write UF8 lookup table");
+}
+
+fn write_uf8_cross_layout_pow_tables(
+    out_dir: &Path,
+    base_name: &str,
+    exponent_name: &str,
+    base_layout: (u32, u32, i32),
+    exponent_layout: (u32, u32, i32),
+) {
+    write_uf8_cross_layout_table(
+        out_dir,
+        &format!("{base_name}_pow_{exponent_name}.bin"),
+        base_layout,
+        exponent_layout,
+        powuf_f32,
+    );
+    write_uf8_cross_layout_table(
+        out_dir,
+        &format!("{base_name}_pow1m_{exponent_name}.bin"),
+        base_layout,
+        exponent_layout,
+        pow1muf_f32,
+    );
+}
+
+fn write_uf8_cross_layout_table(
+    out_dir: &Path,
+    file_name: &str,
+    base_layout: (u32, u32, i32),
+    exponent_layout: (u32, u32, i32),
+    op: fn(f32, f32) -> f32,
+) {
+    let mut table = vec![0; 256 * 256];
+    let (base_exp_bits, base_mantissa_bits, base_bias) = base_layout;
+    let (exponent_exp_bits, exponent_mantissa_bits, exponent_bias) = exponent_layout;
+
+    for a in u8::MIN..=u8::MAX {
+        for b in u8::MIN..=u8::MAX {
+            let index = table_index(a, b);
+            let a = uf8_to_f32(a, base_exp_bits, base_mantissa_bits, base_bias);
+            let b = uf8_to_f32(b, exponent_exp_bits, exponent_mantissa_bits, exponent_bias);
+            table[index] = f32_to_uf8(op(a, b), base_exp_bits, base_mantissa_bits, base_bias);
+        }
+    }
+
+    fs::write(out_dir.join(file_name), table).expect("write UF8 cross-layout lookup table");
 }
 
 fn table_index(a: u8, b: u8) -> usize {

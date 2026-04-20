@@ -40,8 +40,8 @@
 //!
 //! `PowUf` uses exact kernels for common exponent shapes such as zero, one,
 //! one-half, and small integers, then falls back to `libm` for the general
-//! fractional case. Same-layout UF8 exponentiation uses generated lookup
-//! tables and returns the UF8 layout of the base.
+//! fractional case. Same-layout and cross-layout UF8 exponentiation uses
+//! generated lookup tables and returns the UF8 layout of the base.
 //!
 //! [`Pow1mUf`] evaluates `(1 - u)^a` directly. This keeps the complement
 //! operation explicit and lets UF8 use generated lookup tables without
@@ -308,6 +308,34 @@ mod tests {
     }
 
     #[test]
+    fn uf8_cross_layout_pow_luts_match_promoted_arithmetic() {
+        assert_eq!(
+            Uf8::from_f32(9.0).powuf(Uf8E5M3::from_f32(0.5)).to_f32(),
+            3.0
+        );
+        assert_eq!(
+            Uf8E5M3::from_f32(9.0).powuf(Uf8::from_f32(0.5)).to_f32(),
+            3.0
+        );
+
+        for a_bits in u8::MIN..=u8::MAX {
+            for b_bits in u8::MIN..=u8::MAX {
+                let e4m4 = Uf8::from_bits(a_bits);
+                let e5m3 = Uf8E5M3::from_bits(b_bits);
+
+                assert_eq!(
+                    e4m4.powuf(e5m3).to_bits(),
+                    Uf8::from_f32(e4m4.to_f32().powuf(e5m3)).to_bits()
+                );
+                assert_eq!(
+                    e5m3.powuf(e4m4).to_bits(),
+                    Uf8E5M3::from_f32(e5m3.to_f32().powuf(e4m4)).to_bits()
+                );
+            }
+        }
+    }
+
+    #[test]
     fn uf8_pow1m_lut_matches_promoted_arithmetic() {
         assert_eq!(
             Uf8::from_f32(0.75).pow1muf(Uf8::from_f32(0.5)).to_f32(),
@@ -344,6 +372,34 @@ mod tests {
                 assert_eq!(
                     u.pow1muf(exponent).to_bits(),
                     Uf8E5M3::from_f32(u.to_f32().pow1muf(exponent)).to_bits()
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn uf8_cross_layout_pow1m_luts_match_promoted_arithmetic() {
+        assert_eq!(
+            Uf8::from_f32(0.75).pow1muf(Uf8E5M3::from_f32(0.5)).to_f32(),
+            0.5
+        );
+        assert_eq!(
+            Uf8E5M3::from_f32(0.75).pow1muf(Uf8::from_f32(0.5)).to_f32(),
+            0.5
+        );
+
+        for a_bits in u8::MIN..=u8::MAX {
+            for b_bits in u8::MIN..=u8::MAX {
+                let e4m4 = Uf8::from_bits(a_bits);
+                let e5m3 = Uf8E5M3::from_bits(b_bits);
+
+                assert_eq!(
+                    e4m4.pow1muf(e5m3).to_bits(),
+                    Uf8::from_f32(e4m4.to_f32().pow1muf(e5m3)).to_bits()
+                );
+                assert_eq!(
+                    e5m3.pow1muf(e4m4).to_bits(),
+                    Uf8E5M3::from_f32(e5m3.to_f32().pow1muf(e4m4)).to_bits()
                 );
             }
         }

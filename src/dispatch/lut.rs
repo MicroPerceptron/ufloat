@@ -19,9 +19,17 @@ const UF8_E5M3_DIV: &[u8; 65536] = include_bytes!(concat!(env!("OUT_DIR"), "/uf8
 const UF8_E4M4_POW: &[u8; 65536] = include_bytes!(concat!(env!("OUT_DIR"), "/uf8_e4m4_pow.bin"));
 const UF8_E4M4_POW1M: &[u8; 65536] =
     include_bytes!(concat!(env!("OUT_DIR"), "/uf8_e4m4_pow1m.bin"));
+const UF8_E4M4_POW_E5M3: &[u8; 65536] =
+    include_bytes!(concat!(env!("OUT_DIR"), "/uf8_e4m4_pow_uf8_e5m3.bin"));
+const UF8_E4M4_POW1M_E5M3: &[u8; 65536] =
+    include_bytes!(concat!(env!("OUT_DIR"), "/uf8_e4m4_pow1m_uf8_e5m3.bin"));
 const UF8_E5M3_POW: &[u8; 65536] = include_bytes!(concat!(env!("OUT_DIR"), "/uf8_e5m3_pow.bin"));
 const UF8_E5M3_POW1M: &[u8; 65536] =
     include_bytes!(concat!(env!("OUT_DIR"), "/uf8_e5m3_pow1m.bin"));
+const UF8_E5M3_POW_E4M4: &[u8; 65536] =
+    include_bytes!(concat!(env!("OUT_DIR"), "/uf8_e5m3_pow_uf8_e4m4.bin"));
+const UF8_E5M3_POW1M_E4M4: &[u8; 65536] =
+    include_bytes!(concat!(env!("OUT_DIR"), "/uf8_e5m3_pow1m_uf8_e4m4.bin"));
 
 #[cfg(any(not(feature = "f16"), feature = "soft-float"))]
 #[inline(always)]
@@ -82,6 +90,16 @@ pub(crate) fn pow1m_uf8(a: u8, b: u8) -> u8 {
 }
 
 #[inline(always)]
+pub(crate) fn pow_uf8_by_uf8_e5m3(a: u8, b: u8) -> u8 {
+    UF8_E4M4_POW_E5M3[table_index(a, b)]
+}
+
+#[inline(always)]
+pub(crate) fn pow1m_uf8_by_uf8_e5m3(a: u8, b: u8) -> u8 {
+    UF8_E4M4_POW1M_E5M3[table_index(a, b)]
+}
+
+#[inline(always)]
 pub(crate) fn pow_uf8_e5m3(a: u8, b: u8) -> u8 {
     UF8_E5M3_POW[table_index(a, b)]
 }
@@ -89,6 +107,16 @@ pub(crate) fn pow_uf8_e5m3(a: u8, b: u8) -> u8 {
 #[inline(always)]
 pub(crate) fn pow1m_uf8_e5m3(a: u8, b: u8) -> u8 {
     UF8_E5M3_POW1M[table_index(a, b)]
+}
+
+#[inline(always)]
+pub(crate) fn pow_uf8_e5m3_by_uf8(a: u8, b: u8) -> u8 {
+    UF8_E5M3_POW_E4M4[table_index(a, b)]
+}
+
+#[inline(always)]
+pub(crate) fn pow1m_uf8_e5m3_by_uf8(a: u8, b: u8) -> u8 {
+    UF8_E5M3_POW1M_E4M4[table_index(a, b)]
 }
 
 #[inline(always)]

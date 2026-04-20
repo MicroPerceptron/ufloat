@@ -100,6 +100,24 @@ impl PowUf<Uf8> for Uf8 {
     }
 }
 
+impl PowUf<Uf8E5M3> for Uf8 {
+    type Output = Uf8;
+
+    #[inline]
+    fn powuf(self, rhs: Uf8E5M3) -> Self::Output {
+        Uf8::from_bits(dispatch::pow_uf8_by_uf8_e5m3(self.to_bits(), rhs.to_bits()))
+    }
+}
+
+impl PowUf<Uf8> for Uf8E5M3 {
+    type Output = Uf8E5M3;
+
+    #[inline]
+    fn powuf(self, rhs: Uf8) -> Self::Output {
+        Uf8E5M3::from_bits(dispatch::pow_uf8_e5m3_by_uf8(self.to_bits(), rhs.to_bits()))
+    }
+}
+
 impl PowUf<Uf8E5M3> for Uf8E5M3 {
     type Output = Uf8E5M3;
 
@@ -115,6 +133,30 @@ impl Pow1mUf<Uf8> for Uf8 {
     #[inline]
     fn pow1muf(self, rhs: Uf8) -> Self::Output {
         Uf8::from_bits(dispatch::pow1m_uf8(self.to_bits(), rhs.to_bits()))
+    }
+}
+
+impl Pow1mUf<Uf8E5M3> for Uf8 {
+    type Output = Uf8;
+
+    #[inline]
+    fn pow1muf(self, rhs: Uf8E5M3) -> Self::Output {
+        Uf8::from_bits(dispatch::pow1m_uf8_by_uf8_e5m3(
+            self.to_bits(),
+            rhs.to_bits(),
+        ))
+    }
+}
+
+impl Pow1mUf<Uf8> for Uf8E5M3 {
+    type Output = Uf8E5M3;
+
+    #[inline]
+    fn pow1muf(self, rhs: Uf8) -> Self::Output {
+        Uf8E5M3::from_bits(dispatch::pow1m_uf8_e5m3_by_uf8(
+            self.to_bits(),
+            rhs.to_bits(),
+        ))
     }
 }
 

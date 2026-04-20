@@ -313,6 +313,25 @@ macro_rules! bench_compact_powuf {
     };
 }
 
+macro_rules! bench_compact_powuf_cross {
+    ($name:ident, $base_inputs:ident, $exponent_inputs:ident) => {
+        #[bench]
+        fn $name(b: &mut Bencher) {
+            b.iter(|| {
+                let mut acc = 0_u8;
+                for _ in 0..POW_REPEATS {
+                    for base in $base_inputs {
+                        for exponent in $exponent_inputs {
+                            acc ^= black_box(base).powuf(black_box(exponent)).to_bits();
+                        }
+                    }
+                }
+                black_box(acc)
+            });
+        }
+    };
+}
+
 macro_rules! bench_compact_pow1muf {
     ($name:ident, $inputs:ident) => {
         #[bench]
@@ -322,6 +341,25 @@ macro_rules! bench_compact_pow1muf {
                 for _ in 0..POW_REPEATS {
                     for u in $inputs {
                         for exponent in $inputs {
+                            acc ^= black_box(u).pow1muf(black_box(exponent)).to_bits();
+                        }
+                    }
+                }
+                black_box(acc)
+            });
+        }
+    };
+}
+
+macro_rules! bench_compact_pow1muf_cross {
+    ($name:ident, $u_inputs:ident, $exponent_inputs:ident) => {
+        #[bench]
+        fn $name(b: &mut Bencher) {
+            b.iter(|| {
+                let mut acc = 0_u8;
+                for _ in 0..POW_REPEATS {
+                    for u in $u_inputs {
+                        for exponent in $exponent_inputs {
                             acc ^= black_box(u).pow1muf(black_box(exponent)).to_bits();
                         }
                     }
@@ -400,6 +438,8 @@ bench_binary_op!(uf8_mul, UF8_INPUTS, *);
 bench_binary_op!(uf8_div, UF8_INPUTS, /);
 bench_compact_powuf!(uf8_powuf, UF8_INPUTS);
 bench_compact_pow1muf!(uf8_pow1muf, UF8_INPUTS);
+bench_compact_powuf_cross!(uf8_powuf_uf8_e5m3, UF8_INPUTS, UF8_E5M3_INPUTS);
+bench_compact_pow1muf_cross!(uf8_pow1muf_uf8_e5m3, UF8_INPUTS, UF8_E5M3_INPUTS);
 
 bench_binary_op!(uf8_e5m3_add, UF8_E5M3_INPUTS, +);
 bench_binary_op!(uf8_e5m3_sub, UF8_E5M3_INPUTS, -);
@@ -407,6 +447,8 @@ bench_binary_op!(uf8_e5m3_mul, UF8_E5M3_INPUTS, *);
 bench_binary_op!(uf8_e5m3_div, UF8_E5M3_INPUTS, /);
 bench_compact_powuf!(uf8_e5m3_powuf, UF8_E5M3_INPUTS);
 bench_compact_pow1muf!(uf8_e5m3_pow1muf, UF8_E5M3_INPUTS);
+bench_compact_powuf_cross!(uf8_e5m3_powuf_uf8, UF8_E5M3_INPUTS, UF8_INPUTS);
+bench_compact_pow1muf_cross!(uf8_e5m3_pow1muf_uf8, UF8_E5M3_INPUTS, UF8_INPUTS);
 
 bench_binary_op!(uf16_add, UF16_INPUTS, +);
 bench_binary_op!(uf16_sub, UF16_INPUTS, -);

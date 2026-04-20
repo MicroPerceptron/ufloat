@@ -364,12 +364,28 @@ pub(crate) fn pow1m_uf8(a: u8, b: u8) -> u8 {
     lut::pow1m_uf8(a, b)
 }
 
+pub(crate) fn pow_uf8_by_uf8_e5m3(a: u8, b: u8) -> u8 {
+    lut::pow_uf8_by_uf8_e5m3(a, b)
+}
+
+pub(crate) fn pow1m_uf8_by_uf8_e5m3(a: u8, b: u8) -> u8 {
+    lut::pow1m_uf8_by_uf8_e5m3(a, b)
+}
+
 pub(crate) fn pow_uf8_e5m3(a: u8, b: u8) -> u8 {
     lut::pow_uf8_e5m3(a, b)
 }
 
 pub(crate) fn pow1m_uf8_e5m3(a: u8, b: u8) -> u8 {
     lut::pow1m_uf8_e5m3(a, b)
+}
+
+pub(crate) fn pow_uf8_e5m3_by_uf8(a: u8, b: u8) -> u8 {
+    lut::pow_uf8_e5m3_by_uf8(a, b)
+}
+
+pub(crate) fn pow1m_uf8_e5m3_by_uf8(a: u8, b: u8) -> u8 {
+    lut::pow1m_uf8_e5m3_by_uf8(a, b)
 }
 
 pub(crate) fn add_uf16(a: u16, b: u16) -> u16 {
