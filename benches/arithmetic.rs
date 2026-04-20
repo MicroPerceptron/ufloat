@@ -3,7 +3,7 @@
 extern crate test;
 
 use test::{Bencher, black_box};
-use unsigned_float::{Uf8, Uf16, Uf32};
+use unsigned_float::{Uf8, Uf8E5M3, Uf16, Uf16E6M10, Uf32};
 
 const F32_INPUTS: [f32; 16] = [
     0.0,
@@ -62,6 +62,25 @@ const UF8_INPUTS: [Uf8; 16] = [
     Uf8::MAX,
 ];
 
+const UF8_E5M3_INPUTS: [Uf8E5M3; 16] = [
+    Uf8E5M3::ZERO,
+    Uf8E5M3::MIN_POSITIVE,
+    Uf8E5M3::MIN_NORMAL,
+    Uf8E5M3::from_bits(0x50),
+    Uf8E5M3::from_bits(0x70),
+    Uf8E5M3::from_bits(0x74),
+    Uf8E5M3::ONE,
+    Uf8E5M3::from_bits(0x7a),
+    Uf8E5M3::from_bits(0x7c),
+    Uf8E5M3::from_bits(0x80),
+    Uf8E5M3::from_bits(0x84),
+    Uf8E5M3::from_bits(0x8f),
+    Uf8E5M3::from_bits(0x98),
+    Uf8E5M3::from_bits(0xa8),
+    Uf8E5M3::from_bits(0xb8),
+    Uf8E5M3::MAX,
+];
+
 const UF16_INPUTS: [Uf16; 16] = [
     Uf16::ZERO,
     Uf16::MIN_POSITIVE,
@@ -79,6 +98,25 @@ const UF16_INPUTS: [Uf16; 16] = [
     Uf16::from_bits(0xa800),
     Uf16::from_bits(0xb800),
     Uf16::MAX,
+];
+
+const UF16_E6M10_INPUTS: [Uf16E6M10; 16] = [
+    Uf16E6M10::ZERO,
+    Uf16E6M10::MIN_POSITIVE,
+    Uf16E6M10::MIN_NORMAL,
+    Uf16E6M10::from_bits(0x7000),
+    Uf16E6M10::from_bits(0x7800),
+    Uf16E6M10::from_bits(0x7a00),
+    Uf16E6M10::ONE,
+    Uf16E6M10::from_bits(0x7d00),
+    Uf16E6M10::from_bits(0x7e00),
+    Uf16E6M10::from_bits(0x8000),
+    Uf16E6M10::from_bits(0x8200),
+    Uf16E6M10::from_bits(0x83c0),
+    Uf16E6M10::from_bits(0x8800),
+    Uf16E6M10::from_bits(0x9000),
+    Uf16E6M10::from_bits(0x9800),
+    Uf16E6M10::MAX,
 ];
 
 const UF32_INPUTS: [Uf32; 16] = [
@@ -165,7 +203,9 @@ macro_rules! bench_ordering {
 }
 
 bench_from_f32!(uf8_from_f32, Uf8);
+bench_from_f32!(uf8_e5m3_from_f32, Uf8E5M3);
 bench_from_f32!(uf16_from_f32, Uf16);
+bench_from_f32!(uf16_e6m10_from_f32, Uf16E6M10);
 bench_from_f32!(uf32_from_f32, Uf32);
 
 #[bench]
@@ -180,7 +220,9 @@ fn uf32_from_f64(b: &mut Bencher) {
 }
 
 bench_to_f32!(uf8_to_f32, UF8_INPUTS);
+bench_to_f32!(uf8_e5m3_to_f32, UF8_E5M3_INPUTS);
 bench_to_f32!(uf16_to_f32, UF16_INPUTS);
+bench_to_f32!(uf16_e6m10_to_f32, UF16_E6M10_INPUTS);
 bench_to_f32!(uf32_to_f32, UF32_INPUTS);
 
 #[bench]
@@ -199,10 +241,20 @@ bench_binary_op!(uf8_sub, UF8_INPUTS, -);
 bench_binary_op!(uf8_mul, UF8_INPUTS, *);
 bench_binary_op!(uf8_div, UF8_INPUTS, /);
 
+bench_binary_op!(uf8_e5m3_add, UF8_E5M3_INPUTS, +);
+bench_binary_op!(uf8_e5m3_sub, UF8_E5M3_INPUTS, -);
+bench_binary_op!(uf8_e5m3_mul, UF8_E5M3_INPUTS, *);
+bench_binary_op!(uf8_e5m3_div, UF8_E5M3_INPUTS, /);
+
 bench_binary_op!(uf16_add, UF16_INPUTS, +);
 bench_binary_op!(uf16_sub, UF16_INPUTS, -);
 bench_binary_op!(uf16_mul, UF16_INPUTS, *);
 bench_binary_op!(uf16_div, UF16_INPUTS, /);
+
+bench_binary_op!(uf16_e6m10_add, UF16_E6M10_INPUTS, +);
+bench_binary_op!(uf16_e6m10_sub, UF16_E6M10_INPUTS, -);
+bench_binary_op!(uf16_e6m10_mul, UF16_E6M10_INPUTS, *);
+bench_binary_op!(uf16_e6m10_div, UF16_E6M10_INPUTS, /);
 
 bench_binary_op!(uf32_add, UF32_INPUTS, +);
 bench_binary_op!(uf32_sub, UF32_INPUTS, -);
@@ -210,5 +262,7 @@ bench_binary_op!(uf32_mul, UF32_INPUTS, *);
 bench_binary_op!(uf32_div, UF32_INPUTS, /);
 
 bench_ordering!(uf8_ordering, UF8_INPUTS);
+bench_ordering!(uf8_e5m3_ordering, UF8_E5M3_INPUTS);
 bench_ordering!(uf16_ordering, UF16_INPUTS);
+bench_ordering!(uf16_e6m10_ordering, UF16_E6M10_INPUTS);
 bench_ordering!(uf32_ordering, UF32_INPUTS);

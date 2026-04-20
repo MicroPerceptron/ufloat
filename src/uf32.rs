@@ -6,8 +6,10 @@ use crate::{ConversionError, dispatch};
 
 #[derive(Clone, Copy, Default, Hash, PartialEq, Eq)]
 #[repr(transparent)]
+/// A 32-bit unsigned float with 8 exponent bits and 24 mantissa bits.
 pub struct Uf32E8M24(u32);
 
+/// Default 32-bit unsigned float layout.
 pub type Uf32 = Uf32E8M24;
 
 impl Uf32E8M24 {
@@ -175,6 +177,6 @@ impl Div for Uf32E8M24 {
 
 impl fmt::Debug for Uf32E8M24 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_tuple("Uf32").field(&self.to_f64()).finish()
+        f.debug_tuple("Uf32E8M24").field(&self.to_f64()).finish()
     }
 }

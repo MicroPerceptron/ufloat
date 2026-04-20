@@ -3,6 +3,7 @@
 [![Crates.io](https://img.shields.io/crates/v/unsigned-float.svg)](https://crates.io/crates/unsigned-float)
 [![docs.rs](https://docs.rs/unsigned-float/badge.svg)](https://docs.rs/unsigned-float)
 [![GitHub last commit](https://img.shields.io/github/last-commit/MicroPerceptron/ufloat.svg)](https://github.com/MicroPerceptron/ufloat/commits/main)
+[![GitHub license](https://img.shields.io/github/license/MicroPerceptron/ufloat.svg)](https://github.com/MicroPerceptron/ufloat/blob/main/LICENSE)
 [![GitHub issues](https://img.shields.io/github/issues/MicroPerceptron/ufloat.svg)](https://github.com/MicroPerceptron/ufloat/issues)
 [![no_std](https://img.shields.io/badge/no__std-supported-brightgreen.svg)](#no_std)
 
@@ -18,10 +19,12 @@ clear API and predictable bit layouts over exhaustive IEEE 754 compatibility.
 
 ## Formats
 
-| Type   | Concrete layout type | Layout | Storage | Native compute path                    |
+| Alias  | Concrete layout type | Layout | Storage | Native compute path                    |
 | ------ | -------------------- | ------ | ------- | -------------------------------------- |
 | `Uf8`  | `Uf8E4M4`            | E4M4   | `u8`    | LUT by default, nightly `f16` optional |
+|        | `Uf8E5M3`            | E5M3   | `u8`    | LUT by default, nightly `f16` optional |
 | `Uf16` | `Uf16E5M11`          | E5M11  | `u16`   | promote to `f32`                       |
+|        | `Uf16E6M10`          | E6M10  | `u16`   | promote to `f32`                       |
 | `Uf32` | `Uf32E8M24`          | E8M24  | `u32`   | promote to `f64`                       |
 
 The all-ones exponent is reserved for infinity and NaN, following the usual
@@ -29,8 +32,9 @@ IEEE-style convention. Negative native inputs encode to NaN. Operations whose
 mathematical result is negative also produce NaN.
 
 `Uf8`, `Uf16`, and `Uf32` are ergonomic aliases for the default concrete layout
-types. Layout-specific names are exported so future alternatives like E5M3 or
-E6M10 can be added as new types without changing the meaning of the aliases.
+types. Layout-specific names are exported for every format because changing the
+exponent/mantissa split changes the numeric contract. Use E4M4/E5M11 when
+precision near 1.0 matters more; use E5M3/E6M10 when range matters more.
 
 ## Install
 
@@ -42,7 +46,7 @@ unsigned-float = "0.1"
 ## Example
 
 ```rust
-use unsigned_float::{Uf8, Uf16, Uf32};
+use unsigned_float::{Uf8, Uf8E5M3, Uf16, Uf32};
 
 let a = Uf16::from_f32(1.5);
 let b = Uf16::from_f32(2.0);
@@ -58,6 +62,9 @@ assert_eq!(Uf8::ONE.to_bits(), 0x70);
 
 let wide = Uf32::from_f64(1024.0);
 assert_eq!(wide.to_f64(), 1024.0);
+
+let wider_range = Uf8E5M3::from_f32(1024.0);
+assert_eq!(wider_range.to_f32(), 1024.0);
 ```
 
 ## Raw Ordering
@@ -127,7 +134,7 @@ crate API itself does not require allocation or the standard library.
 ## Benchmarks
 
 The benchmark suite uses nightly's built-in `test` harness and covers
-conversions, arithmetic, and raw-bit ordering for `Uf8`, `Uf16`, and `Uf32`.
+conversions, arithmetic, and raw-bit ordering for all exported layouts.
 
 ```sh
 cargo bench --bench arithmetic
@@ -144,7 +151,8 @@ default command measures the generated LUT path.
 Implemented:
 
 - `Uf8`, `Uf16`, and `Uf32` transparent newtypes
-- explicit concrete layout names: `Uf8E4M4`, `Uf16E5M11`, and `Uf32E8M24`
+- explicit concrete layout names: `Uf8E4M4`, `Uf8E5M3`, `Uf16E5M11`,
+  `Uf16E6M10`, and `Uf32E8M24`
 - raw bit constructors and extractors
 - native float conversions
 - fallible conversions from `f64` and primitive integers
@@ -159,7 +167,7 @@ Still worth exploring:
 - configurable UF8 dispatch for direct LUT versus promote-to-native comparisons
 - SIMD bulk operations
 - more explicit NaN payload policy
-- broader property tests for all finite `Uf16` edge cases
+- broader property tests for all finite `Uf16` layout edge cases
 
 ## License
 

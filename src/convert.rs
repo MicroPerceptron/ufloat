@@ -1,13 +1,19 @@
 use core::fmt;
 
-use crate::{Uf8, Uf16, Uf32};
+use crate::{Uf8, Uf8E5M3, Uf16, Uf16E6M10, Uf32};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+/// Error returned by fallible conversions into unsigned float types.
 pub enum ConversionError {
+    /// The source value was less than zero.
     Negative,
+    /// The source value was NaN.
     Nan,
+    /// The source value was infinite.
     Infinite,
+    /// The source value was too large for the target format.
     Overflow,
+    /// The positive source value was too small for the target format.
     Underflow,
 }
 
@@ -82,6 +88,22 @@ macro_rules! impl_try_from_unsigned_int {
                 }
             }
 
+            impl TryFrom<$int> for Uf8E5M3 {
+                type Error = ConversionError;
+
+                fn try_from(value: $int) -> Result<Self, Self::Error> {
+                    Self::try_from_f64(value as f64)
+                }
+            }
+
+            impl TryFrom<$int> for Uf16E6M10 {
+                type Error = ConversionError;
+
+                fn try_from(value: $int) -> Result<Self, Self::Error> {
+                    Self::try_from_f64(value as f64)
+                }
+            }
+
             impl TryFrom<$int> for Uf32 {
                 type Error = ConversionError;
 
@@ -120,6 +142,30 @@ macro_rules! impl_try_from_signed_int {
                 }
             }
 
+            impl TryFrom<$int> for Uf8E5M3 {
+                type Error = ConversionError;
+
+                fn try_from(value: $int) -> Result<Self, Self::Error> {
+                    if value < 0 {
+                        Err(ConversionError::Negative)
+                    } else {
+                        Self::try_from_f64(value as f64)
+                    }
+                }
+            }
+
+            impl TryFrom<$int> for Uf16E6M10 {
+                type Error = ConversionError;
+
+                fn try_from(value: $int) -> Result<Self, Self::Error> {
+                    if value < 0 {
+                        Err(ConversionError::Negative)
+                    } else {
+                        Self::try_from_f64(value as f64)
+                    }
+                }
+            }
+
             impl TryFrom<$int> for Uf32 {
                 type Error = ConversionError;
 
@@ -135,7 +181,7 @@ macro_rules! impl_try_from_signed_int {
     };
 }
 
-impl_try_from_float!(f64, Uf8, Uf16, Uf32);
+impl_try_from_float!(f64, Uf8, Uf8E5M3, Uf16, Uf16E6M10, Uf32);
 
 impl_try_from_unsigned_int!(u8, u16, u32, u64, u128, usize);
 impl_try_from_signed_int!(i8, i16, i32, i64, i128, isize);
