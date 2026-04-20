@@ -1,6 +1,6 @@
 #[cfg(feature = "f128")]
 use crate::Uf64;
-use crate::{Uf8, Uf8E5M3, Uf16, Uf16E6M10, Uf32};
+use crate::{Uf8, Uf8E5M3, Uf16, Uf16E6M10, Uf32, dispatch};
 
 /// Extension trait for raising native floats to unsigned-float exponents.
 ///
@@ -12,6 +12,18 @@ pub trait PowUf<Rhs> {
 
     /// Raises `self` to the unsigned-float exponent `rhs`.
     fn powuf(self, rhs: Rhs) -> Self::Output;
+}
+
+/// Extension trait for evaluating `(1 - self)^rhs`.
+///
+/// This is useful for probability and interpolation kernels where `self` is
+/// already the complement input `u`, not the power base.
+pub trait Pow1mUf<Rhs> {
+    /// The result type of complement exponentiation.
+    type Output;
+
+    /// Raises `1 - self` to the unsigned-float exponent `rhs`.
+    fn pow1muf(self, rhs: Rhs) -> Self::Output;
 }
 
 macro_rules! impl_powuf_f32 {
@@ -44,8 +56,76 @@ macro_rules! impl_powuf_f64 {
     };
 }
 
+macro_rules! impl_pow1muf_f32 {
+    ($($rhs:ty),* $(,)?) => {
+        $(
+            impl Pow1mUf<$rhs> for f32 {
+                type Output = f32;
+
+                #[inline]
+                fn pow1muf(self, rhs: $rhs) -> Self::Output {
+                    pow1muf_f32(self, rhs.to_f32())
+                }
+            }
+        )*
+    };
+}
+
+macro_rules! impl_pow1muf_f64 {
+    ($($rhs:ty),* $(,)?) => {
+        $(
+            impl Pow1mUf<$rhs> for f64 {
+                type Output = f64;
+
+                #[inline]
+                fn pow1muf(self, rhs: $rhs) -> Self::Output {
+                    pow1muf_f64(self, rhs.to_f64())
+                }
+            }
+        )*
+    };
+}
+
 impl_powuf_f32!(Uf8, Uf8E5M3, Uf16, Uf16E6M10, Uf32);
 impl_powuf_f64!(Uf8, Uf8E5M3, Uf16, Uf16E6M10, Uf32);
+impl_pow1muf_f32!(Uf8, Uf8E5M3, Uf16, Uf16E6M10, Uf32);
+impl_pow1muf_f64!(Uf8, Uf8E5M3, Uf16, Uf16E6M10, Uf32);
+
+impl PowUf<Uf8> for Uf8 {
+    type Output = Uf8;
+
+    #[inline]
+    fn powuf(self, rhs: Uf8) -> Self::Output {
+        Uf8::from_bits(dispatch::pow_uf8(self.to_bits(), rhs.to_bits()))
+    }
+}
+
+impl PowUf<Uf8E5M3> for Uf8E5M3 {
+    type Output = Uf8E5M3;
+
+    #[inline]
+    fn powuf(self, rhs: Uf8E5M3) -> Self::Output {
+        Uf8E5M3::from_bits(dispatch::pow_uf8_e5m3(self.to_bits(), rhs.to_bits()))
+    }
+}
+
+impl Pow1mUf<Uf8> for Uf8 {
+    type Output = Uf8;
+
+    #[inline]
+    fn pow1muf(self, rhs: Uf8) -> Self::Output {
+        Uf8::from_bits(dispatch::pow1m_uf8(self.to_bits(), rhs.to_bits()))
+    }
+}
+
+impl Pow1mUf<Uf8E5M3> for Uf8E5M3 {
+    type Output = Uf8E5M3;
+
+    #[inline]
+    fn pow1muf(self, rhs: Uf8E5M3) -> Self::Output {
+        Uf8E5M3::from_bits(dispatch::pow1m_uf8_e5m3(self.to_bits(), rhs.to_bits()))
+    }
+}
 
 #[cfg(feature = "f128")]
 impl PowUf<Uf64> for f32 {
@@ -64,6 +144,26 @@ impl PowUf<Uf64> for f64 {
     #[inline]
     fn powuf(self, rhs: Uf64) -> Self::Output {
         powuf_f64(self, rhs.to_f64())
+    }
+}
+
+#[cfg(feature = "f128")]
+impl Pow1mUf<Uf64> for f32 {
+    type Output = f32;
+
+    #[inline]
+    fn pow1muf(self, rhs: Uf64) -> Self::Output {
+        pow1muf_f32(self, rhs.to_f32())
+    }
+}
+
+#[cfg(feature = "f128")]
+impl Pow1mUf<Uf64> for f64 {
+    type Output = f64;
+
+    #[inline]
+    fn pow1muf(self, rhs: Uf64) -> Self::Output {
+        pow1muf_f64(self, rhs.to_f64())
     }
 }
 
@@ -94,6 +194,36 @@ fn powuf_f64(base: f64, exponent: f64) -> f64 {
         powi_u32_f64(base, integer)
     } else {
         libm::pow(base, exponent)
+    }
+}
+
+#[inline]
+fn pow1muf_f32(u: f32, exponent: f32) -> f32 {
+    if exponent == 0.0 || u == 0.0 {
+        1.0
+    } else if u == 1.0 {
+        0.0
+    } else if !(0.0..=1.0).contains(&u) {
+        powuf_f32(1.0 - u, exponent)
+    } else if exponent == 0.5 {
+        libm::sqrtf(1.0 - u)
+    } else {
+        libm::expm1f(exponent * libm::log1pf(-u)) + 1.0
+    }
+}
+
+#[inline]
+fn pow1muf_f64(u: f64, exponent: f64) -> f64 {
+    if exponent == 0.0 || u == 0.0 {
+        1.0
+    } else if u == 1.0 {
+        0.0
+    } else if !(0.0..=1.0).contains(&u) {
+        powuf_f64(1.0 - u, exponent)
+    } else if exponent == 0.5 {
+        libm::sqrt(1.0 - u)
+    } else {
+        libm::expm1(exponent * libm::log1p(-u)) + 1.0
     }
 }
 

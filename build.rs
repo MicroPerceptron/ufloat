@@ -53,6 +53,22 @@ fn write_uf8_layout_tables(
         bias,
         |a, b| a / b,
     );
+    write_uf8_table(
+        out_dir,
+        &format!("{name}_pow.bin"),
+        exp_bits,
+        mantissa_bits,
+        bias,
+        powuf_f32,
+    );
+    write_uf8_table(
+        out_dir,
+        &format!("{name}_pow1m.bin"),
+        exp_bits,
+        mantissa_bits,
+        bias,
+        pow1muf_f32,
+    );
 }
 
 fn write_uf8_table(
@@ -87,4 +103,62 @@ fn uf8_to_f32(bits: u8, exp_bits: u32, mantissa_bits: u32, bias: i32) -> f32 {
 
 fn f32_to_uf8(value: f32, exp_bits: u32, mantissa_bits: u32, bias: i32) -> u8 {
     soft::encode_from_f64(value as f64, exp_bits, mantissa_bits, bias) as u8
+}
+
+fn powuf_f32(base: f32, exponent: f32) -> f32 {
+    if exponent == 0.0 {
+        1.0
+    } else if exponent == 1.0 {
+        base
+    } else if exponent == 0.5 {
+        libm::sqrtf(base)
+    } else if let Some(integer) = small_integer_exponent_f32(exponent) {
+        powi_u32_f32(base, integer)
+    } else {
+        libm::powf(base, exponent)
+    }
+}
+
+fn pow1muf_f32(u: f32, exponent: f32) -> f32 {
+    if exponent == 0.0 || u == 0.0 {
+        1.0
+    } else if u == 1.0 {
+        0.0
+    } else if !(0.0..=1.0).contains(&u) {
+        powuf_f32(1.0 - u, exponent)
+    } else if exponent == 0.5 {
+        libm::sqrtf(1.0 - u)
+    } else {
+        libm::expm1f(exponent * libm::log1pf(-u)) + 1.0
+    }
+}
+
+fn small_integer_exponent_f32(exponent: f32) -> Option<u32> {
+    if !(2.0..=32.0).contains(&exponent) {
+        return None;
+    }
+
+    let integer = exponent as u32;
+    if integer as f32 == exponent {
+        Some(integer)
+    } else {
+        None
+    }
+}
+
+fn powi_u32_f32(mut base: f32, mut exponent: u32) -> f32 {
+    let mut acc = 1.0;
+
+    while exponent != 0 {
+        if exponent & 1 == 1 {
+            acc *= base;
+        }
+
+        exponent >>= 1;
+        if exponent != 0 {
+            base *= base;
+        }
+    }
+
+    acc
 }

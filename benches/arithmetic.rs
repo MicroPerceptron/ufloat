@@ -5,7 +5,7 @@ extern crate test;
 use test::{Bencher, black_box};
 #[cfg(feature = "f128")]
 use unsigned_float::Uf64;
-use unsigned_float::{PowUf, Uf8, Uf8E5M3, Uf16, Uf16E6M10, Uf32};
+use unsigned_float::{Pow1mUf, PowUf, Uf8, Uf8E5M3, Uf16, Uf16E6M10, Uf32};
 
 const F32_INPUTS: [f32; 16] = [
     0.0,
@@ -260,6 +260,78 @@ macro_rules! bench_powuf_f64 {
     };
 }
 
+macro_rules! bench_pow1muf_f32 {
+    ($name:ident, $inputs:ident) => {
+        #[bench]
+        fn $name(b: &mut Bencher) {
+            b.iter(|| {
+                let mut acc = 0.0_f32;
+                for _ in 0..POW_REPEATS {
+                    for exponent in $inputs {
+                        acc += black_box(0.75_f32).pow1muf(black_box(exponent));
+                    }
+                }
+                black_box(acc)
+            });
+        }
+    };
+}
+
+macro_rules! bench_pow1muf_f64 {
+    ($name:ident, $inputs:ident) => {
+        #[bench]
+        fn $name(b: &mut Bencher) {
+            b.iter(|| {
+                let mut acc = 0.0_f64;
+                for _ in 0..POW_REPEATS {
+                    for exponent in $inputs {
+                        acc += black_box(0.75_f64).pow1muf(black_box(exponent));
+                    }
+                }
+                black_box(acc)
+            });
+        }
+    };
+}
+
+macro_rules! bench_compact_powuf {
+    ($name:ident, $inputs:ident) => {
+        #[bench]
+        fn $name(b: &mut Bencher) {
+            b.iter(|| {
+                let mut acc = 0_u8;
+                for _ in 0..POW_REPEATS {
+                    for base in $inputs {
+                        for exponent in $inputs {
+                            acc ^= black_box(base).powuf(black_box(exponent)).to_bits();
+                        }
+                    }
+                }
+                black_box(acc)
+            });
+        }
+    };
+}
+
+macro_rules! bench_compact_pow1muf {
+    ($name:ident, $inputs:ident) => {
+        #[bench]
+        fn $name(b: &mut Bencher) {
+            b.iter(|| {
+                let mut acc = 0_u8;
+                for _ in 0..POW_REPEATS {
+                    for u in $inputs {
+                        for exponent in $inputs {
+                            acc ^= black_box(u).pow1muf(black_box(exponent)).to_bits();
+                        }
+                    }
+                }
+                black_box(acc)
+            });
+        }
+    };
+}
+
 bench_from_f32!(uf8_from_f32, Uf8);
 bench_from_f32!(uf8_e5m3_from_f32, Uf8E5M3);
 bench_from_f32!(uf16_from_f32, Uf16);
@@ -326,11 +398,15 @@ bench_binary_op!(uf8_add, UF8_INPUTS, +);
 bench_binary_op!(uf8_sub, UF8_INPUTS, -);
 bench_binary_op!(uf8_mul, UF8_INPUTS, *);
 bench_binary_op!(uf8_div, UF8_INPUTS, /);
+bench_compact_powuf!(uf8_powuf, UF8_INPUTS);
+bench_compact_pow1muf!(uf8_pow1muf, UF8_INPUTS);
 
 bench_binary_op!(uf8_e5m3_add, UF8_E5M3_INPUTS, +);
 bench_binary_op!(uf8_e5m3_sub, UF8_E5M3_INPUTS, -);
 bench_binary_op!(uf8_e5m3_mul, UF8_E5M3_INPUTS, *);
 bench_binary_op!(uf8_e5m3_div, UF8_E5M3_INPUTS, /);
+bench_compact_powuf!(uf8_e5m3_powuf, UF8_E5M3_INPUTS);
+bench_compact_pow1muf!(uf8_e5m3_pow1muf, UF8_E5M3_INPUTS);
 
 bench_binary_op!(uf16_add, UF16_INPUTS, +);
 bench_binary_op!(uf16_sub, UF16_INPUTS, -);
@@ -372,6 +448,14 @@ bench_powuf_f32!(f32_powuf_uf32, UF32_INPUTS);
 #[cfg(feature = "f128")]
 bench_powuf_f32!(f32_powuf_uf64, UF64_INPUTS);
 
+bench_pow1muf_f32!(f32_pow1muf_uf8, UF8_INPUTS);
+bench_pow1muf_f32!(f32_pow1muf_uf8_e5m3, UF8_E5M3_INPUTS);
+bench_pow1muf_f32!(f32_pow1muf_uf16, UF16_INPUTS);
+bench_pow1muf_f32!(f32_pow1muf_uf16_e6m10, UF16_E6M10_INPUTS);
+bench_pow1muf_f32!(f32_pow1muf_uf32, UF32_INPUTS);
+#[cfg(feature = "f128")]
+bench_pow1muf_f32!(f32_pow1muf_uf64, UF64_INPUTS);
+
 bench_powuf_f64!(f64_powuf_uf8, UF8_INPUTS);
 bench_powuf_f64!(f64_powuf_uf8_e5m3, UF8_E5M3_INPUTS);
 bench_powuf_f64!(f64_powuf_uf16, UF16_INPUTS);
@@ -379,3 +463,11 @@ bench_powuf_f64!(f64_powuf_uf16_e6m10, UF16_E6M10_INPUTS);
 bench_powuf_f64!(f64_powuf_uf32, UF32_INPUTS);
 #[cfg(feature = "f128")]
 bench_powuf_f64!(f64_powuf_uf64, UF64_INPUTS);
+
+bench_pow1muf_f64!(f64_pow1muf_uf8, UF8_INPUTS);
+bench_pow1muf_f64!(f64_pow1muf_uf8_e5m3, UF8_E5M3_INPUTS);
+bench_pow1muf_f64!(f64_pow1muf_uf16, UF16_INPUTS);
+bench_pow1muf_f64!(f64_pow1muf_uf16_e6m10, UF16_E6M10_INPUTS);
+bench_pow1muf_f64!(f64_pow1muf_uf32, UF32_INPUTS);
+#[cfg(feature = "f128")]
+bench_pow1muf_f64!(f64_pow1muf_uf64, UF64_INPUTS);

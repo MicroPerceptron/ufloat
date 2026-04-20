@@ -1,10 +1,8 @@
+mod lut;
 mod soft;
 
 #[cfg(all(feature = "f16", not(feature = "soft-float")))]
 mod fp16;
-
-#[cfg(any(not(feature = "f16"), feature = "soft-float"))]
-mod lut;
 
 const UF8_EXP_BITS: u32 = 4;
 const UF8_MANTISSA_BITS: u32 = 4;
@@ -356,6 +354,22 @@ pub(crate) fn div_uf8_e5m3(a: u8, b: u8) -> u8 {
     {
         lut::div_uf8_e5m3(a, b)
     }
+}
+
+pub(crate) fn pow_uf8(a: u8, b: u8) -> u8 {
+    lut::pow_uf8(a, b)
+}
+
+pub(crate) fn pow1m_uf8(a: u8, b: u8) -> u8 {
+    lut::pow1m_uf8(a, b)
+}
+
+pub(crate) fn pow_uf8_e5m3(a: u8, b: u8) -> u8 {
+    lut::pow_uf8_e5m3(a, b)
+}
+
+pub(crate) fn pow1m_uf8_e5m3(a: u8, b: u8) -> u8 {
+    lut::pow1m_uf8_e5m3(a, b)
 }
 
 pub(crate) fn add_uf16(a: u16, b: u16) -> u16 {
