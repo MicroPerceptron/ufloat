@@ -1,0 +1,214 @@
+#![feature(test)]
+
+extern crate test;
+
+use test::{Bencher, black_box};
+use ufloat::{Uf8, Uf16, Uf32};
+
+const F32_INPUTS: [f32; 16] = [
+    0.0,
+    0.000_976_562_5,
+    0.03125,
+    0.125,
+    0.5,
+    0.75,
+    1.0,
+    1.25,
+    1.5,
+    2.0,
+    3.0,
+    7.5,
+    16.0,
+    64.0,
+    256.0,
+    1024.0,
+];
+
+const F64_INPUTS: [f64; 16] = [
+    0.0,
+    0.000_000_000_931_322_574_615_478_5,
+    0.000_976_562_5,
+    0.125,
+    0.5,
+    0.75,
+    1.0,
+    1.25,
+    1.5,
+    2.0,
+    3.0,
+    7.5,
+    16.0,
+    64.0,
+    256.0,
+    1024.0,
+];
+
+const UF8_INPUTS: [Uf8; 16] = [
+    Uf8::ZERO,
+    Uf8::MIN_POSITIVE,
+    Uf8::MIN_NORMAL,
+    Uf8::from_bits(0x30),
+    Uf8::from_bits(0x60),
+    Uf8::from_bits(0x68),
+    Uf8::ONE,
+    Uf8::from_bits(0x74),
+    Uf8::from_bits(0x78),
+    Uf8::from_bits(0x80),
+    Uf8::from_bits(0x88),
+    Uf8::from_bits(0x98),
+    Uf8::from_bits(0xb0),
+    Uf8::from_bits(0xc0),
+    Uf8::from_bits(0xd0),
+    Uf8::MAX,
+];
+
+const UF16_INPUTS: [Uf16; 16] = [
+    Uf16::ZERO,
+    Uf16::MIN_POSITIVE,
+    Uf16::MIN_NORMAL,
+    Uf16::from_bits(0x6000),
+    Uf16::from_bits(0x7000),
+    Uf16::from_bits(0x7400),
+    Uf16::ONE,
+    Uf16::from_bits(0x7a00),
+    Uf16::from_bits(0x7c00),
+    Uf16::from_bits(0x8000),
+    Uf16::from_bits(0x8400),
+    Uf16::from_bits(0x8780),
+    Uf16::from_bits(0x9800),
+    Uf16::from_bits(0xa800),
+    Uf16::from_bits(0xb800),
+    Uf16::MAX,
+];
+
+const UF32_INPUTS: [Uf32; 16] = [
+    Uf32::ZERO,
+    Uf32::MIN_POSITIVE,
+    Uf32::MIN_NORMAL,
+    Uf32::from_bits(0x7c00_0000),
+    Uf32::from_bits(0x7e00_0000),
+    Uf32::from_bits(0x7e80_0000),
+    Uf32::ONE,
+    Uf32::from_bits(0x7f40_0000),
+    Uf32::from_bits(0x7f80_0000),
+    Uf32::from_bits(0x8000_0000),
+    Uf32::from_bits(0x8040_0000),
+    Uf32::from_bits(0x80e0_0000),
+    Uf32::from_bits(0x8300_0000),
+    Uf32::from_bits(0x8500_0000),
+    Uf32::from_bits(0x8700_0000),
+    Uf32::MAX,
+];
+
+macro_rules! bench_from_f32 {
+    ($name:ident, $ty:ty) => {
+        #[bench]
+        fn $name(b: &mut Bencher) {
+            b.iter(|| {
+                let mut acc = 0_u32;
+                for value in F32_INPUTS {
+                    acc ^= <$ty>::from_f32(black_box(value)).to_bits() as u32;
+                }
+                black_box(acc)
+            });
+        }
+    };
+}
+
+macro_rules! bench_to_f32 {
+    ($name:ident, $inputs:ident) => {
+        #[bench]
+        fn $name(b: &mut Bencher) {
+            b.iter(|| {
+                let mut acc = 0.0_f32;
+                for value in $inputs {
+                    acc += black_box(value).to_f32();
+                }
+                black_box(acc)
+            });
+        }
+    };
+}
+
+macro_rules! bench_binary_op {
+    ($name:ident, $inputs:ident, $op:tt) => {
+        #[bench]
+        fn $name(b: &mut Bencher) {
+            b.iter(|| {
+                let mut acc = $inputs[0];
+                for lhs in $inputs {
+                    for rhs in $inputs {
+                        acc = black_box(lhs) $op black_box(rhs);
+                    }
+                }
+                black_box(acc)
+            });
+        }
+    };
+}
+
+macro_rules! bench_ordering {
+    ($name:ident, $inputs:ident) => {
+        #[bench]
+        fn $name(b: &mut Bencher) {
+            b.iter(|| {
+                let mut acc = 0_usize;
+                for lhs in $inputs {
+                    for rhs in $inputs {
+                        acc ^= black_box(lhs < rhs) as usize;
+                    }
+                }
+                black_box(acc)
+            });
+        }
+    };
+}
+
+bench_from_f32!(uf8_from_f32, Uf8);
+bench_from_f32!(uf16_from_f32, Uf16);
+bench_from_f32!(uf32_from_f32, Uf32);
+
+#[bench]
+fn uf32_from_f64(b: &mut Bencher) {
+    b.iter(|| {
+        let mut acc = 0_u32;
+        for value in F64_INPUTS {
+            acc ^= Uf32::from_f64(black_box(value)).to_bits();
+        }
+        black_box(acc)
+    });
+}
+
+bench_to_f32!(uf8_to_f32, UF8_INPUTS);
+bench_to_f32!(uf16_to_f32, UF16_INPUTS);
+bench_to_f32!(uf32_to_f32, UF32_INPUTS);
+
+#[bench]
+fn uf32_to_f64(b: &mut Bencher) {
+    b.iter(|| {
+        let mut acc = 0.0_f64;
+        for value in UF32_INPUTS {
+            acc += black_box(value).to_f64();
+        }
+        black_box(acc)
+    });
+}
+
+bench_binary_op!(uf8_add, UF8_INPUTS, +);
+bench_binary_op!(uf8_sub, UF8_INPUTS, -);
+bench_binary_op!(uf8_mul, UF8_INPUTS, *);
+bench_binary_op!(uf8_div, UF8_INPUTS, /);
+
+bench_binary_op!(uf16_add, UF16_INPUTS, +);
+bench_binary_op!(uf16_sub, UF16_INPUTS, -);
+bench_binary_op!(uf16_mul, UF16_INPUTS, *);
+bench_binary_op!(uf16_div, UF16_INPUTS, /);
+
+bench_binary_op!(uf32_add, UF32_INPUTS, +);
+bench_binary_op!(uf32_sub, UF32_INPUTS, -);
+bench_binary_op!(uf32_mul, UF32_INPUTS, *);
+bench_binary_op!(uf32_div, UF32_INPUTS, /);
+
+bench_ordering!(uf8_ordering, UF8_INPUTS);
+bench_ordering!(uf16_ordering, UF16_INPUTS);
+bench_ordering!(uf32_ordering, UF32_INPUTS);
