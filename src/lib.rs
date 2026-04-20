@@ -27,6 +27,21 @@
 //! assert_eq!(Uf16::try_from(-1_i32), Err(ConversionError::Negative));
 //! ```
 //!
+//! # Exponents
+//!
+//! Use [`PowUf`] to raise native floats to unsigned-float exponents:
+//!
+//! ```
+//! use unsigned_float::{PowUf, Uf16};
+//!
+//! let root = 9.0_f32.powuf(Uf16::from_f32(0.5));
+//! assert_eq!(root, 3.0);
+//! ```
+//!
+//! `PowUf` uses exact kernels for common exponent shapes such as zero, one,
+//! one-half, and small integers, then falls back to `libm` for the general
+//! fractional case.
+//!
 #![no_std]
 #![cfg_attr(feature = "f16", feature(f16))]
 #![cfg_attr(feature = "f128", feature(f128))]
@@ -36,6 +51,7 @@ extern crate std;
 
 mod convert;
 mod dispatch;
+mod pow;
 mod uf16;
 mod uf32;
 #[cfg(feature = "f128")]
@@ -43,6 +59,7 @@ mod uf64;
 mod uf8;
 
 pub use convert::ConversionError;
+pub use pow::PowUf;
 pub use uf8::{Uf8, Uf8E4M4, Uf8E5M3};
 pub use uf16::{Uf16, Uf16E5M11, Uf16E6M10};
 pub use uf32::{Uf32, Uf32E8M24};
@@ -53,7 +70,7 @@ pub use uf64::{Uf64, Uf64E11M52};
 mod tests {
     #[cfg(feature = "f128")]
     use super::Uf64;
-    use super::{ConversionError, Uf8, Uf8E5M3, Uf16, Uf16E6M10, Uf32};
+    use super::{ConversionError, PowUf, Uf8, Uf8E5M3, Uf16, Uf16E6M10, Uf32};
 
     #[test]
     fn canonical_one_bits_match_the_layouts() {
@@ -209,6 +226,25 @@ mod tests {
         assert_eq!((Uf32::from_f64(9.0) / Uf32::from_f64(3.0)).to_f64(), 3.0);
         #[cfg(feature = "f128")]
         assert_eq!((Uf64::from_f64(9.0) / Uf64::from_f64(3.0)).to_f64(), 3.0);
+    }
+
+    #[test]
+    fn native_float_bases_can_use_unsigned_float_exponents() {
+        assert_eq!(9.0_f32.powuf(Uf8::from_f32(0.5)), 3.0);
+        assert_eq!(9.0_f32.powuf(Uf8E5M3::from_f32(0.5)), 3.0);
+        assert_eq!(9.0_f32.powuf(Uf16::from_f32(0.5)), 3.0);
+        assert_eq!(9.0_f64.powuf(Uf16E6M10::from_f32(0.5)), 3.0);
+        assert_eq!(9.0_f64.powuf(Uf32::from_f64(0.5)), 3.0);
+        assert_eq!(2.0_f32.powuf(Uf16::from_f32(8.0)), 256.0);
+        assert_eq!((-2.0_f32).powuf(Uf8::from_f32(3.0)), -8.0);
+        assert_eq!(f32::NAN.powuf(Uf8::ZERO), 1.0);
+        assert!((16.0_f64.powuf(Uf32::from_f64(1.25)) - 32.0).abs() < 1.0e-12);
+
+        #[cfg(feature = "f128")]
+        {
+            assert_eq!(9.0_f64.powuf(Uf64::from_f64(0.5)), 3.0);
+            assert_eq!(2.0_f64.powuf(Uf64::from_f64(10.0)), 1024.0);
+        }
     }
 
     #[cfg(any(not(feature = "f16"), feature = "soft-float"))]

@@ -116,6 +116,29 @@ The crate implements fallible conversions from `f64` and primitive integer
 types. With the `f16` feature enabled, `from_f16`, `to_f16`,
 `From<f16>`, and `Into<f16>` are also available.
 
+## Exponents
+
+Use `PowUf` to raise native floats to unsigned-float exponents:
+
+```rust
+use unsigned_float::{PowUf, Uf16};
+
+let exponent = Uf16::from_f32(0.5);
+let root = 9.0_f32.powuf(exponent);
+
+assert_eq!(root, 3.0);
+```
+
+`PowUf` is dependency-free from the caller's perspective and works in `no_std`
+builds by using `libm` internally. It is implemented for `f32` and `f64` bases
+over all exported unsigned-float exponent layouts. With `f128`, `Uf64` can also
+be used as an exponent for `f32` and `f64` bases.
+
+The trait dispatches through small kernels before falling back to general
+`libm` exponentiation. Exact exponents `0`, `1`, and `0.5` map to identity,
+base, and square-root paths, while exact small integer exponents use
+exponentiation by squaring.
+
 ## Features
 
 | Feature      | Default | Description                                                                                                 |
@@ -159,6 +182,7 @@ Implemented:
   `Uf16E6M10`, `Uf32E8M24`, and feature-gated `Uf64E11M52`
 - raw bit constructors and extractors
 - native float conversions
+- `PowUf` for native float bases and unsigned-float exponents
 - fallible conversions from `f64` and primitive integers
 - `Add`, `Sub`, `Mul`, and `Div`
 - raw-bit `Ord`/`PartialOrd`
