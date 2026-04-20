@@ -2,8 +2,8 @@
 
 [![Crates.io](https://img.shields.io/crates/v/unsigned-float.svg)](https://crates.io/crates/unsigned-float)
 [![docs.rs](https://docs.rs/unsigned-float/badge.svg)](https://docs.rs/unsigned-float)
-[![GitHub last commit](https://img.shields.io/github/last-commit/MicroPerceptron/unsigned-float.svg)](https://github.com/MicroPerceptron/unsigned-float/commits/main)
-[![GitHub issues](https://img.shields.io/github/issues/MicroPerceptron/unsigned-float.svg)](https://github.com/MicroPerceptron/unsigned-float/issues)
+[![GitHub last commit](https://img.shields.io/github/last-commit/MicroPerceptron/ufloat.svg)](https://github.com/MicroPerceptron/ufloat/commits/main)
+[![GitHub issues](https://img.shields.io/github/issues/MicroPerceptron/ufloat.svg)](https://github.com/MicroPerceptron/ufloat/issues)
 [![no_std](https://img.shields.io/badge/no__std-supported-brightgreen.svg)](#no_std)
 
 Unsigned floating-point types for values that can never be negative.
