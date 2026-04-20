@@ -3,5 +3,5 @@
 version = 4
 
 [[package]]
-name = "ufloat"
+name = "unsigned-float"
 version = "0.1.1"

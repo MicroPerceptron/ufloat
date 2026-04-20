@@ -3,7 +3,7 @@
 extern crate test;
 
 use test::{Bencher, black_box};
-use ufloat::{Uf8, Uf16, Uf32};
+use unsigned_float::{Uf8, Uf16, Uf32};
 
 const F32_INPUTS: [f32; 16] = [
     0.0,

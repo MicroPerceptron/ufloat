@@ -1,17 +1,17 @@
-# ufloat
+# unsigned-float
 
-[![Crates.io](https://img.shields.io/crates/v/ufloat.svg)](https://crates.io/crates/ufloat)
-[![docs.rs](https://docs.rs/ufloat/badge.svg)](https://docs.rs/ufloat)
-[![GitHub last commit](https://img.shields.io/github/last-commit/MicroPerceptron/ufloat.svg)](https://github.com/MicroPerceptron/ufloat/commits/main)
-[![GitHub issues](https://img.shields.io/github/issues/MicroPerceptron/ufloat.svg)](https://github.com/MicroPerceptron/ufloat/issues)
+[![Crates.io](https://img.shields.io/crates/v/unsigned-float.svg)](https://crates.io/crates/unsigned-float)
+[![docs.rs](https://docs.rs/unsigned-float/badge.svg)](https://docs.rs/unsigned-float)
+[![GitHub last commit](https://img.shields.io/github/last-commit/MicroPerceptron/unsigned-float.svg)](https://github.com/MicroPerceptron/unsigned-float/commits/main)
+[![GitHub issues](https://img.shields.io/github/issues/MicroPerceptron/unsigned-float.svg)](https://github.com/MicroPerceptron/unsigned-float/issues)
 [![no_std](https://img.shields.io/badge/no__std-supported-brightgreen.svg)](#no_std)
 
 Unsigned floating-point types for values that can never be negative.
 
-`ufloat` provides compact unsigned float newtypes with IEEE-like exponent and
-mantissa fields, but no sign bit. The missing sign bit buys either extra
-precision or range, removes negative zero, and makes total ordering as simple as
-comparing the raw integer representation.
+`unsigned-float` provides compact unsigned float newtypes with IEEE-like
+exponent and mantissa fields, but no sign bit. The missing sign bit buys either
+extra precision or range, removes negative zero, and makes total ordering as
+simple as comparing the raw integer representation.
 
 This crate is young and experimental. The current behavior prioritizes a small,
 clear API and predictable bit layouts over exhaustive IEEE 754 compatibility.
@@ -32,13 +32,13 @@ mathematical result is negative also produce NaN.
 
 ```toml
 [dependencies]
-ufloat = "0.1"
+unsigned-float = "0.1"
 ```
 
 ## Example
 
 ```rust
-use ufloat::{Uf8, Uf16, Uf32};
+use unsigned_float::{Uf8, Uf16, Uf32};
 
 let a = Uf16::from_f32(1.5);
 let b = Uf16::from_f32(2.0);
@@ -61,7 +61,7 @@ assert_eq!(wide.to_f64(), 1024.0);
 Unsigned floats are ordered by their raw bits:
 
 ```rust
-use ufloat::Uf16;
+use unsigned_float::Uf16;
 
 let values = [Uf16::from_f32(4.0), Uf16::ZERO, Uf16::from_f32(1.0)];
 let mut sorted = values;
