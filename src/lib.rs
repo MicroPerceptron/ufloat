@@ -9,6 +9,8 @@
 //! concrete layouts [`Uf8E4M4`], [`Uf16E5M11`], and [`Uf32E8M24`]. Alternate
 //! layouts such as [`Uf8E5M3`] and [`Uf16E6M10`] are exported as distinct types
 //! so their range and precision tradeoffs stay explicit.
+//! With the `f128` feature enabled, [`Uf64`] is also available and promotes
+//! through nightly primitive `f128`.
 //!
 //! # Conversions
 //!
@@ -27,6 +29,7 @@
 //!
 #![no_std]
 #![cfg_attr(feature = "f16", feature(f16))]
+#![cfg_attr(feature = "f128", feature(f128))]
 
 #[cfg(test)]
 extern crate std;
@@ -35,15 +38,21 @@ mod convert;
 mod dispatch;
 mod uf16;
 mod uf32;
+#[cfg(feature = "f128")]
+mod uf64;
 mod uf8;
 
 pub use convert::ConversionError;
 pub use uf8::{Uf8, Uf8E4M4, Uf8E5M3};
 pub use uf16::{Uf16, Uf16E5M11, Uf16E6M10};
 pub use uf32::{Uf32, Uf32E8M24};
+#[cfg(feature = "f128")]
+pub use uf64::{Uf64, Uf64E11M52};
 
 #[cfg(test)]
 mod tests {
+    #[cfg(feature = "f128")]
+    use super::Uf64;
     use super::{ConversionError, Uf8, Uf8E5M3, Uf16, Uf16E6M10, Uf32};
 
     #[test]
@@ -53,6 +62,8 @@ mod tests {
         assert_eq!(Uf16::ONE.to_bits(), 0x7800);
         assert_eq!(Uf16E6M10::ONE.to_bits(), 0x7c00);
         assert_eq!(Uf32::ONE.to_bits(), 0x7f00_0000);
+        #[cfg(feature = "f128")]
+        assert_eq!(Uf64::ONE.to_bits(), 0x3ff0_0000_0000_0000);
     }
 
     #[test]
@@ -88,12 +99,16 @@ mod tests {
         assert!(Uf16::from_f32(f32::NEG_INFINITY).is_nan());
         assert!(Uf16E6M10::from_f32(f32::NEG_INFINITY).is_nan());
         assert!(Uf32::from_f64(-1.0).is_nan());
+        #[cfg(feature = "f128")]
+        assert!(Uf64::from_f64(-1.0).is_nan());
 
         assert!(Uf8::from_f32(f32::INFINITY).is_infinite());
         assert!(Uf8E5M3::from_f32(f32::INFINITY).is_infinite());
         assert!(Uf16::from_f32(f32::INFINITY).is_infinite());
         assert!(Uf16E6M10::from_f32(f32::INFINITY).is_infinite());
         assert!(Uf32::from_f64(f64::INFINITY).is_infinite());
+        #[cfg(feature = "f128")]
+        assert!(Uf64::from_f64(f64::INFINITY).is_infinite());
     }
 
     #[test]
@@ -114,6 +129,8 @@ mod tests {
         assert_eq!(Uf16::try_from(2.0_f64), Ok(Uf16::from_f32(2.0)));
         assert_eq!(Uf16E6M10::try_from(2.0_f64), Ok(Uf16E6M10::from_f32(2.0)));
         assert_eq!(Uf32::try_from(2.0_f64), Ok(Uf32::from_f64(2.0)));
+        #[cfg(feature = "f128")]
+        assert_eq!(Uf64::try_from_f64(2.0_f64), Ok(Uf64::from_f64(2.0)));
     }
 
     #[test]
@@ -126,6 +143,8 @@ mod tests {
             Ok(Uf16E6M10::from_f32(1024.0))
         );
         assert_eq!(Uf32::try_from(1024_u64), Ok(Uf32::from_f64(1024.0)));
+        #[cfg(feature = "f128")]
+        assert_eq!(Uf64::try_from(1024_u64), Ok(Uf64::from_f64(1024.0)));
 
         assert_eq!(Uf8::try_from(-1_i8), Err(ConversionError::Negative));
         assert_eq!(Uf8::try_from(u128::MAX), Err(ConversionError::Overflow));
@@ -141,18 +160,24 @@ mod tests {
         assert_eq!(Uf16::from_f16(native).to_f16(), native);
         assert_eq!(Uf16E6M10::from_f16(native).to_f16(), native);
         assert_eq!(Uf32::from_f16(native).to_f16(), native);
+        #[cfg(feature = "f128")]
+        assert_eq!(Uf64::from_f16(native).to_f16(), native);
 
         assert_eq!(Uf8::from(native), Uf8::from_f16(native));
         assert_eq!(Uf8E5M3::from(native), Uf8E5M3::from_f16(native));
         assert_eq!(Uf16::from(native), Uf16::from_f16(native));
         assert_eq!(Uf16E6M10::from(native), Uf16E6M10::from_f16(native));
         assert_eq!(Uf32::from(native), Uf32::from_f16(native));
+        #[cfg(feature = "f128")]
+        assert_eq!(Uf64::from(native), Uf64::from_f16(native));
 
         let _: f16 = Uf8::from_f16(native).into();
         let _: f16 = Uf8E5M3::from_f16(native).into();
         let _: f16 = Uf16::from_f16(native).into();
         let _: f16 = Uf16E6M10::from_f16(native).into();
         let _: f16 = Uf32::from_f16(native).into();
+        #[cfg(feature = "f128")]
+        let _: f16 = Uf64::from_f16(native).into();
     }
 
     #[test]
@@ -162,6 +187,11 @@ mod tests {
         assert_eq!(Uf16::MIN_POSITIVE.to_f32(), 2.0_f32.powi(-25));
         assert_eq!(Uf16E6M10::MIN_POSITIVE.to_f32(), 2.0_f32.powi(-40));
         assert_eq!(Uf32::MIN_POSITIVE.to_f64(), 2.0_f64.powi(-150));
+        #[cfg(feature = "f128")]
+        assert_eq!(
+            Uf64::MIN_POSITIVE.to_f64(),
+            f64::MIN_POSITIVE / 2.0_f64.powi(52)
+        );
     }
 
     #[test]
@@ -177,6 +207,8 @@ mod tests {
             1.5
         );
         assert_eq!((Uf32::from_f64(9.0) / Uf32::from_f64(3.0)).to_f64(), 3.0);
+        #[cfg(feature = "f128")]
+        assert_eq!((Uf64::from_f64(9.0) / Uf64::from_f64(3.0)).to_f64(), 3.0);
     }
 
     #[cfg(any(not(feature = "f16"), feature = "soft-float"))]
@@ -234,6 +266,8 @@ mod tests {
         assert!((Uf16::from_f32(1.0) - Uf16::from_f32(2.0)).is_nan());
         assert!((Uf16E6M10::from_f32(1.0) - Uf16E6M10::from_f32(2.0)).is_nan());
         assert!((Uf32::from_f64(1.0) - Uf32::from_f64(2.0)).is_nan());
+        #[cfg(feature = "f128")]
+        assert!((Uf64::from_f64(1.0) - Uf64::from_f64(2.0)).is_nan());
     }
 
     #[test]
@@ -257,6 +291,13 @@ mod tests {
         assert!(Uf32::ZERO < Uf32::MIN_POSITIVE);
         assert!(Uf32::MAX < Uf32::INFINITY);
         assert!(Uf32::INFINITY < Uf32::NAN);
+
+        #[cfg(feature = "f128")]
+        {
+            assert!(Uf64::ZERO < Uf64::MIN_POSITIVE);
+            assert!(Uf64::MAX < Uf64::INFINITY);
+            assert!(Uf64::INFINITY < Uf64::NAN);
+        }
     }
 
     #[test]

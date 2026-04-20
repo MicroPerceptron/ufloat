@@ -26,6 +26,7 @@ clear API and predictable bit layouts over exhaustive IEEE 754 compatibility.
 | `Uf16` | `Uf16E5M11`          | E5M11  | `u16`   | promote to `f32`                       |
 |        | `Uf16E6M10`          | E6M10  | `u16`   | promote to `f32`                       |
 | `Uf32` | `Uf32E8M24`          | E8M24  | `u32`   | promote to `f64`                       |
+| `Uf64` | `Uf64E11M52`         | E11M52 | `u64`   | promote to nightly `f128`              |
 
 The all-ones exponent is reserved for infinity and NaN, following the usual
 IEEE-style convention. Negative native inputs encode to NaN. Operations whose
@@ -35,6 +36,7 @@ mathematical result is negative also produce NaN.
 types. Layout-specific names are exported for every format because changing the
 exponent/mantissa split changes the numeric contract. Use E4M4/E5M11 when
 precision near 1.0 matters more; use E5M3/E6M10 when range matters more.
+`Uf64` is available only with the `f128` feature.
 
 ## Install
 
@@ -119,6 +121,8 @@ types. With the `f16` feature enabled, `from_f16`, `to_f16`,
 | Feature      | Default | Description                                                                                                 |
 | ------------ | ------- | ----------------------------------------------------------------------------------------------------------- |
 | `f16`        | No      | Uses nightly primitive `f16` for `Uf8` arithmetic dispatch. Requires nightly Rust.                          |
+| `f128`       | No      | Enables `Uf64`/`Uf64E11M52` and promotes its arithmetic through nightly primitive `f128`.                   |
+| `nightly`    | No      | Convenience feature enabling both `f16` and `f128`.                                                        |
 | `soft-float` | No      | Forces the software/LUT dispatch path where available. If combined with `f16`, `soft-float` wins for `Uf8`. |
 
 The default `Uf8` arithmetic path uses generated 256x256 lookup tables for
@@ -152,7 +156,7 @@ Implemented:
 
 - `Uf8`, `Uf16`, and `Uf32` transparent newtypes
 - explicit concrete layout names: `Uf8E4M4`, `Uf8E5M3`, `Uf16E5M11`,
-  `Uf16E6M10`, and `Uf32E8M24`
+  `Uf16E6M10`, `Uf32E8M24`, and feature-gated `Uf64E11M52`
 - raw bit constructors and extractors
 - native float conversions
 - fallible conversions from `f64` and primitive integers
