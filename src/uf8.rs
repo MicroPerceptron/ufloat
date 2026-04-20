@@ -4,6 +4,28 @@ use core::ops::{Add, Div, Mul, Sub};
 
 use crate::{ConversionError, dispatch};
 
+macro_rules! impl_float_format {
+    ($ty:ty, $to_float:ident) => {
+        impl fmt::Display for $ty {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                fmt::Display::fmt(&self.$to_float(), f)
+            }
+        }
+
+        impl fmt::LowerExp for $ty {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                fmt::LowerExp::fmt(&self.$to_float(), f)
+            }
+        }
+
+        impl fmt::UpperExp for $ty {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                fmt::UpperExp::fmt(&self.$to_float(), f)
+            }
+        }
+    };
+}
+
 #[derive(Clone, Copy, Default, Hash, PartialEq, Eq)]
 #[repr(transparent)]
 /// An 8-bit unsigned float with 4 exponent bits and 4 mantissa bits.
@@ -181,6 +203,8 @@ impl fmt::Debug for Uf8E4M4 {
     }
 }
 
+impl_float_format!(Uf8E4M4, to_f32);
+
 #[derive(Clone, Copy, Default, Hash, PartialEq, Eq)]
 #[repr(transparent)]
 /// An 8-bit unsigned float with 5 exponent bits and 3 mantissa bits.
@@ -354,3 +378,5 @@ impl fmt::Debug for Uf8E5M3 {
         f.debug_tuple("Uf8E5M3").field(&self.to_f32()).finish()
     }
 }
+
+impl_float_format!(Uf8E5M3, to_f32);

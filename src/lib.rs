@@ -495,6 +495,62 @@ mod tests {
     }
 
     #[test]
+    fn formatting_delegates_to_promoted_float() {
+        macro_rules! assert_f32_formatting {
+            ($value:expr, $native:expr) => {
+                assert_eq!(std::format!("{}", $value), std::format!("{}", $native));
+                assert_eq!(
+                    std::format!("{:.2}", $value),
+                    std::format!("{:.2}", $native)
+                );
+                assert_eq!(
+                    std::format!("{:08.2}", $value),
+                    std::format!("{:08.2}", $native)
+                );
+                assert_eq!(std::format!("{:e}", $value), std::format!("{:e}", $native));
+                assert_eq!(std::format!("{:E}", $value), std::format!("{:E}", $native));
+            };
+        }
+
+        macro_rules! assert_f64_formatting {
+            ($value:expr, $native:expr) => {
+                assert_eq!(std::format!("{}", $value), std::format!("{}", $native));
+                assert_eq!(
+                    std::format!("{:.4}", $value),
+                    std::format!("{:.4}", $native)
+                );
+                assert_eq!(
+                    std::format!("{:010.4}", $value),
+                    std::format!("{:010.4}", $native)
+                );
+                assert_eq!(std::format!("{:e}", $value), std::format!("{:e}", $native));
+                assert_eq!(std::format!("{:E}", $value), std::format!("{:E}", $native));
+            };
+        }
+
+        let uf8 = Uf8::from_f32(1.5);
+        assert_f32_formatting!(uf8, uf8.to_f32());
+
+        let uf8_e5m3 = Uf8E5M3::from_f32(1.5);
+        assert_f32_formatting!(uf8_e5m3, uf8_e5m3.to_f32());
+
+        let uf16 = Uf16::from_f32(1.5);
+        assert_f32_formatting!(uf16, uf16.to_f32());
+
+        let uf16_e6m10 = Uf16E6M10::from_f32(1.5);
+        assert_f32_formatting!(uf16_e6m10, uf16_e6m10.to_f32());
+
+        let uf32 = Uf32::from_f64(1.5);
+        assert_f64_formatting!(uf32, uf32.to_f64());
+
+        #[cfg(feature = "f128")]
+        {
+            let uf64 = Uf64::from_f64(1.5);
+            assert_f64_formatting!(uf64, uf64.to_f64());
+        }
+    }
+
+    #[test]
     fn round_to_nearest_even_when_encoding() {
         assert_eq!(Uf8::from_f32(1.0 + 1.0 / 32.0).to_bits(), 0x70);
         assert_eq!(Uf8::from_f32(1.0 + 3.0 / 32.0).to_bits(), 0x72);

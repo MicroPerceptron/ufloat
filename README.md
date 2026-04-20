@@ -116,6 +116,18 @@ The crate implements fallible conversions from `f64` and primitive integer
 types. With the `f16` feature enabled, `from_f16`, `to_f16`,
 `From<f16>`, and `Into<f16>` are also available.
 
+Unsigned-float values also forward common float formatting to their promoted
+native value:
+
+```rust
+use unsigned_float::Uf16;
+
+let value = Uf16::from_f32(1.5);
+
+assert_eq!(format!("{value:.2}"), "1.50");
+assert_eq!(format!("{value:e}"), "1.5e0");
+```
+
 ## Exponents
 
 Use `PowUf` to raise native floats to unsigned-float exponents:
@@ -211,6 +223,7 @@ Implemented:
   `Uf16E6M10`, `Uf32E8M24`, and feature-gated `Uf64E11M52`
 - raw bit constructors and extractors
 - native float conversions
+- float-style `Display`, `LowerExp`, and `UpperExp` formatting
 - `PowUf` for native float bases and unsigned-float exponents
 - `Pow1mUf` for native and UF8 complement powers
 - fallible conversions from `f64` and primitive integers

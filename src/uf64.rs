@@ -4,6 +4,28 @@ use core::ops::{Add, Div, Mul, Sub};
 
 use crate::{ConversionError, dispatch};
 
+macro_rules! impl_float_format {
+    ($ty:ty, $to_float:ident) => {
+        impl fmt::Display for $ty {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                fmt::Display::fmt(&self.$to_float(), f)
+            }
+        }
+
+        impl fmt::LowerExp for $ty {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                fmt::LowerExp::fmt(&self.$to_float(), f)
+            }
+        }
+
+        impl fmt::UpperExp for $ty {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                fmt::UpperExp::fmt(&self.$to_float(), f)
+            }
+        }
+    };
+}
+
 #[derive(Clone, Copy, Default, Hash, PartialEq, Eq)]
 #[repr(transparent)]
 /// A 64-bit unsigned float with 11 exponent bits and 52 mantissa bits.
@@ -229,3 +251,5 @@ impl fmt::Debug for Uf64E11M52 {
         f.debug_tuple("Uf64E11M52").field(&self.to_f64()).finish()
     }
 }
+
+impl_float_format!(Uf64E11M52, to_f64);
